@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instrument Usage Datasheet — GC Lab, IIT Gandhinagar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg-gradient: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    --surface: #FFFFFF;
+    --surface-glass: rgba(255, 255, 255, 0.88);
+    --surface-subtle: #F1F5F9;
+    --border: #E2E8F0;
+    --border-strong: #CBD5E1;
+    
+    --ink: #0F172A;
+    --ink-dim: #475569;
+    --ink-faint: #94A3B8;
+
+    /* Instrument: Furnace */
+    --furnace: #2563EB;
+    --furnace-gradient: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    --furnace-soft: #EFF6FF;
+    --furnace-line: #BFDBFE;
+    --furnace-glow: rgba(37, 99, 235, 0.18);
+
+    /* Instrument: GC */
+    --gc: #0D9488;
+    --gc-gradient: linear-gradient(135deg, #14B8A6 0%, #0F766E 100%);
+    --gc-soft: #F0FDFA;
+    --gc-line: #99F6E4;
+    --gc-glow: rgba(13, 148, 136, 0.18);
+
+    /* Active dynamic variables */
+    --accent: var(--furnace);
+    --accent-gradient: var(--furnace-gradient);
+    --accent-soft: var(--furnace-soft);
+    --accent-line: var(--furnace-line);
+    --accent-glow: var(--furnace-glow);
+
+    --radius-xl: 24px;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+
+    --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.04);
+    --shadow-card: 0 12px 32px -8px rgba(15, 23, 42, 0.08), 0 4px 12px -4px rgba(15, 23, 42, 0.03);
+    --shadow-glow: 0 8px 24px -4px var(--accent-glow);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 36px 16px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { width: 100%; max-width: 500px; }
+
+  /* ---------- Header ---------- */
+  .app-header {
+    background: var(--surface-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    padding: 24px;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 20px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-dim);
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 6px #10B981;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .subtitle {
+    margin: 6px 0 0;
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .whoami {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 6px 14px 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-sm);
+  }
+  .whoami strong { color: var(--ink); font-weight: 600; }
+  .whoami svg { color: var(--accent); flex-shrink: 0; }
+  .whoami:hover {
+    border-color: var(--accent-line);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* ---------- Name Gate ---------- */
+  .name-gate {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 24px 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+    animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .name-gate p {
+    margin: 0 0 14px;
+    font-size: 14px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+  }
+  .name-gate form { display: flex; gap: 10px; }
+  .name-gate input {
+    flex: 1;
+    background: var(--surface-subtle);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    color: var(--ink);
+    font-size: 14.5px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .name-gate input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    background: var(--accent-gradient);
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 12px 20px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-glow);
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+  .btn:active { transform: translateY(0) scale(0.98); }
+  
+  .btn.ghost {
+    background: transparent;
+    color: var(--ink-dim);
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+  .btn.ghost:hover {
+    background: var(--surface-subtle);
+    color: var(--ink);
+    border-color: var(--border-strong);
+  }
+
+  .btn.danger-ish {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    box-shadow: 0 8px 20px -4px rgba(239, 68, 68, 0.3);
+  }
+
+  /* ---------- Instrument Segmented Tabs ---------- */
+  .tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    padding: 6px;
+    border-radius: 18px;
+    gap: 8px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .tab {
+    flex: 1;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tab .tab-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab .tab-sub {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+  .tab .swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  .tab.active {
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+  .tab.active .tab-name { color: var(--accent); }
+  .tab.active .tab-sub { color: var(--ink-dim); }
+  .tab.active .swatch { transform: scale(1.4); }
+
+  /* ---------- Info Cards ---------- */
+  .window-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 12px 18px;
+    background: var(--surface-glass);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--ink-dim);
+    box-shadow: var(--shadow-sm);
+  }
+  .window-banner strong { color: var(--ink); font-weight: 600; }
+
+  .usage {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--ink-dim);
+    box-shadow: var(--shadow-sm);
+  }
+  .usage .dots { display: flex; gap: 6px; }
+  .usage .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .usage .dot.filled {
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  /* ---------- Calendar ---------- */
+  .month-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+  }
+  .month-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+    margin: 0 0 16px 2px;
+    letter-spacing: -0.01em;
+  }
+  .weekday-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .weekday-row span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .cal-cell {
+    position: relative;
+    min-height: 60px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cal-cell:hover:not(.blank):not(.out-of-window) {
+    border-color: var(--accent-line);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .cal-cell:active:not(.blank):not(.out-of-window) { transform: translateY(0) scale(0.96); }
+  
+  .cal-cell.blank { background: transparent; border: none; cursor: default; min-height: 0; }
+  .cal-cell.out-of-window {
+    background: var(--surface-subtle);
+    color: var(--ink-faint);
+    border-color: transparent;
+    cursor: default;
+    opacity: 0.4;
+  }
+  .cal-cell.today {
+    border-color: var(--ink-dim);
+  }
+  .cal-cell.today::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .cal-cell.selected {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+  }
+
+  .cal-num { font-weight: 600; font-size: 14px; line-height: 1; }
+  .cal-name {
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1.1;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .cal-cell.blocked-mine {
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+  }
+  .cal-cell.blocked-mine .cal-num { color: var(--accent); }
+  .cal-cell.blocked-mine .cal-name {
+    background: var(--accent);
+    color: #FFFFFF;
+  }
+
+  .cal-cell.blocked-other {
+    background: #F8FAFC;
+    border: 1.5px dashed var(--border-strong);
+  }
+  .cal-cell.blocked-other .cal-num { color: var(--ink-dim); }
+  .cal-cell.blocked-other .cal-name {
+    background: #E2E8F0;
+    color: var(--ink-dim);
+  }
+
+  /* ---------- Modal Popup ---------- */
+  .modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.22);
+    animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .modal-date {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--ink);
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .modal-status {
+    font-size: 14.5px;
+    color: var(--ink-dim);
+    margin: 0 0 20px;
+    line-height: 1.5;
+  }
+  .modal-status strong { color: var(--ink); }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.94) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .footnote {
+    margin-top: 28px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .credit-divider {
+    width: 36px;
+    height: 2px;
+    background: var(--border);
+    margin: 20px auto 14px;
+    border-radius: 2px;
+  }
+  .credit {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .loading {
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 14px;
+    padding: 60px 0;
+    font-weight: 500;
+  }
+
+  @media (min-width: 760px) {
+    body { padding: 50px 24px 80px; }
+    .app { max-width: 680px; }
+    h1 { font-size: 28px; }
+    .cal-cell { font-size: 15px; min-height: 72px; }
+    .cal-name { font-size: 10px; }
+    .cal-grid, .weekday-row { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="loading" id="loading">Loading instrument datasheet…</div>
+</div>
+
+<script>
+(function(){
+
+  const DOW_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const MONTH_LABELS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MAX_PER_WEEK = 2;
+  const WINDOW_DAYS = 15;
+
+  const INSTRUMENTS = {
+    furnace: { label: 'Furnace', sub: 'Heat-treatment furnace', accent: '--furnace', accentGradient: '--furnace-gradient', accentSoft: '--furnace-soft', accentLine: '--furnace-line', accentGlow: '--furnace-glow' },
+    gc: { label: 'GC · TCD/FID', sub: 'Gas Chromatography', accent: '--gc', accentGradient: '--gc-gradient', accentSoft: '--gc-soft', accentLine: '--gc-line', accentGlow: '--gc-glow' }
+  };
+
+  let myName = null;
+  let bookings = { furnace: {}, gc: {} };
+  let activeInstrument = 'furnace';
+  let selectedDate = null;
+
+  const app = document.getElementById('app');
+
+  function fmt(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function todayDate(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+  function addDays(d, n){ const date = new Date(d); date.setDate(date.getDate() + n); return date; }
+  function isSameDate(a,b){ return fmt(a) === fmt(b); }
+  function startOfWeek(d){
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    date.setDate(date.getDate() + diff);
+    date.setHours(0,0,0,0);
+    return date;
+  }
+  function getWeekDatesFor(d){
+    const base = startOfWeek(d);
+    const days = [];
+    for(let i=0;i<7;i++) days.push(addDays(base,i));
+    return days;
+  }
+
+  function windowBounds(){
+    const start = todayDate();
+    const end = addDays(start, WINDOW_DAYS - 1);
+    return { start, end };
+  }
+  function inWindow(d, bounds){
+    const dd = new Date(d); dd.setHours(0,0,0,0);
+    return dd >= bounds.start && dd <= bounds.end;
+  }
+
+  async function loadName(){
+    try{
+      const res = await window.storage.get('my-name', false);
+      myName = res ? res.value : null;
+    }catch(e){ myName = null; }
+  }
+  async function saveName(name){
+    myName = name;
+    try{ await window.storage.set('my-name', name, false); }catch(e){}
+  }
+  async function loadBookings(){
+    try{
+      const res = await window.storage.get('bookings', true);
+      const parsed = res ? JSON.parse(res.value) : {};
+      bookings = { furnace: parsed.furnace || {}, gc: parsed.gc || {} };
+    }catch(e){
+      if(!bookings || !bookings.furnace || !bookings.gc){
+        bookings = { furnace: {}, gc: {} };
+      }
+    }
+  }
+  async function saveBookings(){
+    try{ await window.storage.set('bookings', JSON.stringify(bookings), true); }catch(e){
+      console.error('Could not save bookings', e);
+    }
+  }
+
+  function countWeekBlocksFor(name, weekDates, excludeDate, table){
+    let n = 0;
+    for(const d of weekDates){
+      const k = fmt(d);
+      if(k === excludeDate) continue;
+      if(table[k] && table[k].name === name) n++;
+    }
+    return n;
+  }
+
+  function escapeHtml(s){
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+  function shortName(name){
+    const first = name.trim().split(/\s+/)[0];
+    return first.length > 9 ? first.slice(0, 8) + '…' : first;
+  }
+
+  function buildMonthCells(year, month){
+    const firstOfMonth = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const leading = (firstOfMonth.getDay() + 6) % 7;
+    const cells = [];
+    for(let i=0;i<leading;i++) cells.push(null);
+    for(let day=1; day<=daysInMonth; day++) cells.push(new Date(year, month, day));
+    while(cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }
+
+  function renderMonthBlock(year, month, bounds, table, today){
+    const cells = buildMonthCells(year, month);
+    let html = `<div class="month-block">`;
+    html += `<div class="month-title">${MONTH_LABELS[month]} ${year}</div>`;
+    html += `<div class="weekday-row">${DOW_LABELS.map(l=>`<span>${l}</span>`).join('')}</div>`;
+    html += `<div class="cal-grid">`;
+    for(const d of cells){
+      if(!d){ html += `<div class="cal-cell blank"></div>`; continue; }
+      const key = fmt(d);
+      const within = inWindow(d, bounds);
+      const booking = table[key];
+      const isToday = isSameDate(d, today);
+      const isSelected = selectedDate === key;
+
+      let cls = 'cal-cell';
+      const isMine = booking && myName && booking.name === myName;
+      if(!within){
+        cls += ' out-of-window';
+      } else {
+        if(isToday) cls += ' today';
+        if(isSelected) cls += ' selected';
+        if(booking){
+          cls += isMine ? ' blocked-mine' : ' blocked-other';
+        }
+      }
+
+      html += `
+        <div class="${cls}" ${within ? `data-action="selectDay" data-date="${key}"` : ''}>
+          <span class="cal-num">${d.getDate()}</span>
+          ${within && booking ? `<span class="cal-name">${isMine ? 'You' : escapeHtml(shortName(booking.name))}</span>` : ''}
+        </div>
+      `;
+    }
+    html += `</div></div>`;
+    return html;
+  }
+
+  function renderModal(table){
+    if(!selectedDate) return '';
+
+    const d = new Date(selectedDate + 'T00:00:00');
+    const label = `${DOW_LABELS[(d.getDay()+6)%7]}, ${MONTH_LABELS[d.getMonth()]} ${d.getDate()}`;
+    const booking = table[selectedDate];
+    const mine = booking && myName && booking.name === myName;
+    const inst = INSTRUMENTS[activeInstrument];
+
+    let statusHtml, actionsHtml;
+
+    if(booking){
+      if(mine){
+        statusHtml = `<p class="modal-status">Reserved by <strong>you</strong> for ${inst.label}.</p>`;
+        actionsHtml = `
+          <div class="panel-actions">
+            <button class="btn ghost" data-action="deselect">Cancel</button>
+            <button class="btn danger-ish" data-action="confirmRelease" data-date="${selectedDate}">Release Slot</button>
+          </div>
+        `;
+      } else {
+        statusHtml = `<p class="modal-status">Slot reserved by <strong>${escapeHtml(booking.name)}</strong>.</p>`;
+        actionsHtml = `
+          <div class="panel-actions">
+            <button class="btn ghost" data-action="deselect">Close</button>
+          </div>
+        `;
+      }
+    } else {
+      statusHtml = `<p class="modal-status">Slot available on ${inst.label}.${myName ? '' : '<br>Enter your name above to block.'}</p>`;
+      actionsHtml = myName ? `
+        <div class="panel-actions">
+          <button class="btn ghost" data-action="deselect">Cancel</button>
+          <button class="btn" data-action="confirmBlock" data-date="${selectedDate}">Reserve Slot</button>
+        </div>
+      ` : `
+        <div class="panel-actions">
+          <button class="btn ghost" data-action="deselect">Close</button>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="modal-backdrop" id="modalBackdrop">
+        <div class="modal-card">
+          <p class="modal-date">${label}</p>
+          ${statusHtml}
+          ${actionsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function render(){
+    const today = todayDate();
+    const bounds = windowBounds();
+    const table = bookings[activeInstrument];
+    const inst = INSTRUMENTS[activeInstrument];
+
+    const usageBaseDate = selectedDate ? new Date(selectedDate + 'T00:00:00') : today;
+    const weekDates = getWeekDatesFor(usageBaseDate);
+    const usedByMe = myName ? countWeekBlocksFor(myName, weekDates, null, table) : 0;
+
+    let html = '';
+
+    html += `
+      <div class="app-header">
+        <div class="eyebrow">GC Lab · IIT Gandhinagar</div>
+        <div class="title-row">
+          <div>
+            <h1>Instrument Datasheet</h1>
+            <p class="subtitle">Book instrument time up to 15 days ahead. Limit of 2 days per person per week.</p>
+          </div>
+          ${myName ? `
+            <button class="whoami" id="whoBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+              <span><strong>${escapeHtml(myName)}</strong></span>
+            </button>` : ''}
+        </div>
+      </div>
+    `;
+
+    if(!myName){
+      html += `
+        <div class="name-gate">
+          <p>Please enter your name to reserve or release instrument slots.</p>
+          <form id="nameForm">
+            <input type="text" id="nameInput" placeholder="Enter your full name" maxlength="40" autocomplete="off" />
+            <button type="submit" class="btn">Continue</button>
+          </form>
+        </div>
+      `;
+    }
+
+    html += `<div class="tabs">`;
+    for(const key of Object.keys(INSTRUMENTS)){
+      const i = INSTRUMENTS[key];
+      const active = key === activeInstrument;
+      html += `
+        <div class="tab ${active ? 'active' : ''}" data-action="setInstrument" data-instrument="${key}">
+          <div class="tab-name"><span class="swatch" style="background:var(${i.accent})"></span>${i.label}</div>
+          <div class="tab-sub">${i.sub}</div>
+        </div>
+      `;
+    }
+    html += `</div>`;
+
+    const startLabel = `${MONTH_LABELS[bounds.start.getMonth()].slice(0,3)} ${bounds.start.getDate()}`;
+    const endLabel = `${MONTH_LABELS[bounds.end.getMonth()].slice(0,3)} ${bounds.end.getDate()}`;
+    html += `
+      <div class="window-banner">
+        <span>Active Booking Window</span>
+        <strong>${startLabel} – ${endLabel}</strong>
+      </div>
+    `;
+
+    if(myName){
+      let dots = '';
+      for(let i=0;i<MAX_PER_WEEK;i++){
+        dots += `<span class="dot ${i < usedByMe ? 'filled' : ''}"></span>`;
+      }
+      const weekLabel = selectedDate ? 'that week' : 'this week';
+      html += `
+        <div class="usage">
+          <div class="dots">${dots}</div>
+          <span><strong>${usedByMe} of ${MAX_PER_WEEK}</strong> ${inst.label} slots booked ${weekLabel}</span>
+        </div>
+      `;
+    }
+
+    let cursor = new Date(bounds.start.getFullYear(), bounds.start.getMonth(), 1);
+    const endCursor = new Date(bounds.end.getFullYear(), bounds.end.getMonth(), 1);
+    while(cursor <= endCursor){
+      html += renderMonthBlock(cursor.getFullYear(), cursor.getMonth(), bounds, table, today);
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    }
+
+    html += `<p class="footnote">Bookings update live for all lab members.<br/>Only slot owners may release reserved positions.</p>`;
+    html += `<div class="credit-divider"></div>`;
+    html += `<p class="credit">alumni of GC lab (srthkkshwh)<br>made using AI</p>`;
+
+    // Append Popup Modal if day is selected
+    html += renderModal(table);
+
+    app.innerHTML = html;
+
+    app.style.setProperty('--accent', `var(${inst.accent})`);
+    app.style.setProperty('--accent-gradient', `var(${inst.accentGradient})`);
+    app.style.setProperty('--accent-soft', `var(${inst.accentSoft})`);
+    app.style.setProperty('--accent-line', `var(${inst.accentLine})`);
+    app.style.setProperty('--accent-glow', `var(${inst.accentGlow})`);
+
+    attachHandlers();
+  }
+
+  function attachHandlers(){
+    const nameForm = document.getElementById('nameForm');
+    if(nameForm){
+      nameForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const input = document.getElementById('nameInput');
+        const val = input.value.trim();
+        if(!val) return;
+        await saveName(val);
+        render();
+      });
+    }
+
+    const whoBtn = document.getElementById('whoBtn');
+    if(whoBtn){
+      whoBtn.addEventListener('click', async ()=>{
+        const next = prompt('Update your name:', myName || '');
+        if(next && next.trim()){
+          await saveName(next.trim());
+          render();
+        }
+      });
+    }
+
+    document.querySelectorAll('[data-action="setInstrument"]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        activeInstrument = el.getAttribute('data-instrument');
+        selectedDate = null;
+        render();
+      });
+    });
+
+    document.querySelectorAll('[data-action="selectDay"]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const date = el.getAttribute('data-date');
+        selectedDate = date;
+        render();
+      });
+    });
+
+    const backdrop = document.getElementById('modalBackdrop');
+    if(backdrop){
+      backdrop.addEventListener('click', (e)=>{
+        if(e.target === backdrop){
+          selectedDate = null;
+          render();
+        }
+      });
+    }
+
+    document.querySelectorAll('[data-action="deselect"]').forEach(el=>{
+      el.addEventListener('click', ()=>{ selectedDate = null; render(); });
+    });
+
+    document.querySelectorAll('[data-action="confirmBlock"]').forEach(el=>{
+      el.addEventListener('click', async ()=>{
+        const date = el.getAttribute('data-date');
+        await handleBlock(date);
+      });
+    });
+
+    document.querySelectorAll('[data-action="confirmRelease"]').forEach(el=>{
+      el.addEventListener('click', async ()=>{
+        const date = el.getAttribute('data-date');
+        await handleRelease(date);
+      });
+    });
+  }
+
+  async function handleBlock(date){
+    await loadBookings();
+    const table = bookings[activeInstrument];
+
+    if(table[date]){
+      selectedDate = null;
+      render();
+      return;
+    }
+
+    const d = new Date(date + 'T00:00:00');
+    const weekDates = getWeekDatesFor(d);
+    const used = countWeekBlocksFor(myName, weekDates, date, table);
+    if(used >= MAX_PER_WEEK){
+      alert(`Weekly limit reached (${MAX_PER_WEEK} days for ${INSTRUMENTS[activeInstrument].label}). Release an existing slot first.`);
+      selectedDate = null;
+      render();
+      return;
+    }
+
+    table[date] = { name: myName, blockedAt: Date.now() };
+    await saveBookings();
+    selectedDate = null;
+    render();
+  }
+
+  async function handleRelease(date){
+    await loadBookings();
+    const table = bookings[activeInstrument];
+    if(table[date] && table[date].name === myName){
+      delete table[date];
+      await saveBookings();
+    }
+    selectedDate = null;
+    render();
+  }
+
+  async function init(){
+    await Promise.all([loadName(), loadBookings()]);
+    render();
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
