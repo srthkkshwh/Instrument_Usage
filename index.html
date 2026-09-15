@@ -550,6 +550,7 @@
   };
 
   let myName = null;
+  let deviceToken = null;
   let bookings = { furnace: {}, gc: {} };
   let activeInstrument = 'furnace';
   let selectedDate = null;
@@ -600,6 +601,23 @@
     myName = name;
     try{ await window.storage.set('my-name', name, false); }catch(e){}
   }
+
+  async function loadDeviceToken(){
+    try{
+      const res = await window.storage.get('device-token', false);
+      if(res && res.value){
+        deviceToken = res.value;
+      } else {
+        deviceToken = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+        await window.storage.set('device-token', deviceToken, false);
+      }
+    }catch(e){
+      if(!deviceToken){
+        deviceToken = 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+      }
+    }
+  }
+
   async function loadBookings(){
     try{
       const res = await window.storage.get('bookings', true);
@@ -617,12 +635,12 @@
     }
   }
 
-  function countWeekBlocksFor(name, weekDates, excludeDate, table){
+  function countWeekBlocksFor(token, weekDates, excludeDate, table){
     let n = 0;
     for(const d of weekDates){
       const k = fmt(d);
       if(k === excludeDate) continue;
-      if(table[k] && table[k].name === name) n++;
+      if(table[k] && table[k].ownerToken === token) n++;
     }
     return n;
   }
@@ -663,7 +681,7 @@
       const isSelected = selectedDate === key;
 
       let cls = 'cal-cell';
-      const isMine = booking && myName && booking.name === myName;
+      const isMine = booking && deviceToken && booking.ownerToken === deviceToken;
       if(!within){
         cls += ' out-of-window';
       } else {
@@ -691,14 +709,14 @@
     const d = new Date(selectedDate + 'T00:00:00');
     const label = `${DOW_LABELS[(d.getDay()+6)%7]}, ${MONTH_LABELS[d.getMonth()]} ${d.getDate()}`;
     const booking = table[selectedDate];
-    const mine = booking && myName && booking.name === myName;
+    const isMine = booking && deviceToken && booking.ownerToken === deviceToken;
     const inst = INSTRUMENTS[activeInstrument];
 
     let statusHtml, actionsHtml;
 
     if(booking){
-      if(mine){
-        statusHtml = `<p class="modal-status">Reserved by <strong>you</strong> for ${inst.label}.</p>`;
+      if(isMine){
+        statusHtml = `<p class="modal-status">Reserved by <strong>you (this device)</strong> for ${inst.label}.</p>`;
         actionsHtml = `
           <div class="panel-actions">
             <button class="btn ghost" data-action="deselect">Cancel</button>
@@ -706,7 +724,7 @@
           </div>
         `;
       } else {
-        statusHtml = `<p class="modal-status">Slot reserved by <strong>${escapeHtml(booking.name)}</strong>.</p>`;
+        statusHtml = `<p class="modal-status">Slot reserved by <strong>${escapeHtml(booking.name)}</strong>.<br><span style="font-size:12px; opacity:0.8;">🔒 Locked: Only the device used to book this slot can release it.</span></p>`;
         actionsHtml = `
           <div class="panel-actions">
             <button class="btn ghost" data-action="deselect">Close</button>
@@ -714,7 +732,7 @@
         `;
       }
     } else {
-      statusHtml = `<p class="modal-status">Slot available on ${inst.label}.${myName ? '' : '<br>Enter your name above to block.'}</p>`;
+      statusHtml = `<p class="modal-status">Slot available on ${inst.label}.${myName ? '' : '<br>Enter your name above to book.'}</p>`;
       actionsHtml = myName ? `
         <div class="panel-actions">
           <button class="btn ghost" data-action="deselect">Cancel</button>
@@ -746,7 +764,7 @@
 
     const usageBaseDate = selectedDate ? new Date(selectedDate + 'T00:00:00') : today;
     const weekDates = getWeekDatesFor(usageBaseDate);
-    const usedByMe = myName ? countWeekBlocksFor(myName, weekDates, null, table) : 0;
+    const usedByMe = deviceToken ? countWeekBlocksFor(deviceToken, weekDates, null, table) : 0;
 
     let html = '';
 
@@ -826,7 +844,6 @@
     html += `<div class="credit-divider"></div>`;
     html += `<p class="credit">alumni of GC lab (srthkkshwh)<br>made using AI</p>`;
 
-    // Append Popup Modal if day is selected
     html += renderModal(table);
 
     app.innerHTML = html;
@@ -921,7 +938,7 @@
 
     const d = new Date(date + 'T00:00:00');
     const weekDates = getWeekDatesFor(d);
-    const used = countWeekBlocksFor(myName, weekDates, date, table);
+    const used = countWeekBlocksFor(deviceToken, weekDates, date, table);
     if(used >= MAX_PER_WEEK){
       alert(`Weekly limit reached (${MAX_PER_WEEK} days for ${INSTRUMENTS[activeInstrument].label}). Release an existing slot first.`);
       selectedDate = null;
@@ -929,7 +946,11 @@
       return;
     }
 
-    table[date] = { name: myName, blockedAt: Date.now() };
+    table[date] = { 
+      name: myName, 
+      ownerToken: deviceToken, 
+      blockedAt: Date.now() 
+    };
     await saveBookings();
     selectedDate = null;
     render();
@@ -938,16 +959,18 @@
   async function handleRelease(date){
     await loadBookings();
     const table = bookings[activeInstrument];
-    if(table[date] && table[date].name === myName){
+    if(table[date] && table[date].ownerToken === deviceToken){
       delete table[date];
       await saveBookings();
+    } else {
+      alert("Only the device used to book this slot can release it.");
     }
     selectedDate = null;
     render();
   }
 
   async function init(){
-    await Promise.all([loadName(), loadBookings()]);
+    await Promise.all([loadName(), loadDeviceToken(), loadBookings()]);
     render();
   }
 
