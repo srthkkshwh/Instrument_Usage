@@ -519,6 +519,16 @@
     padding: 60px 0;
     font-weight: 500;
   }
+  .conn-error {
+    text-align: center;
+    color: #B91C1C;
+    font-size: 13px;
+    padding: 14px 18px;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+  }
 
   @media (min-width: 760px) {
     body { padding: 50px 24px 80px; }
@@ -536,7 +546,27 @@
   <div class="loading" id="loading">Loading instrument datasheet…</div>
 </div>
 
-<script>
+<script type="module">
+/* ==============================================================
+   FIREBASE CONFIG — GC Lab Instrument project.
+   ============================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAqTNIW1A5Mme16PCk-QzfdCChjX2e5W1E",
+  authDomain: "gc-lab-instrument.firebaseapp.com",
+  projectId: "gc-lab-instrument",
+  storageBucket: "gc-lab-instrument.firebasestorage.app",
+  messagingSenderId: "158386679269",
+  appId: "1:158386679269:web:a7ba171283fb875754d30c"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {
+  getFirestore, doc, onSnapshot, runTransaction, deleteField
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
 (function(){
 
   const DOW_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -554,6 +584,8 @@
   let bookings = { furnace: {}, gc: {} };
   let activeInstrument = 'furnace';
   let selectedDate = null;
+  let connError = false;
+  let hasLoadedOnce = false;
 
   const app = document.getElementById('app');
 
@@ -591,48 +623,39 @@
     return dd >= bounds.start && dd <= bounds.end;
   }
 
-  async function loadName(){
-    try{
-      const res = await window.storage.get('my-name', false);
-      myName = res ? res.value : null;
-    }catch(e){ myName = null; }
+  // ---------- per-device identity (localStorage — this is a real standalone site now) ----------
+  function loadName(){
+    myName = localStorage.getItem('gc-lab-my-name');
   }
-  async function saveName(name){
+  function saveName(name){
     myName = name;
-    try{ await window.storage.set('my-name', name, false); }catch(e){}
+    localStorage.setItem('gc-lab-my-name', name);
+  }
+  function loadDeviceToken(){
+    let token = localStorage.getItem('gc-lab-device-token');
+    if(!token){
+      token = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('gc-lab-device-token', token);
+    }
+    deviceToken = token;
   }
 
-  async function loadDeviceToken(){
-    try{
-      const res = await window.storage.get('device-token', false);
-      if(res && res.value){
-        deviceToken = res.value;
-      } else {
-        deviceToken = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-        await window.storage.set('device-token', deviceToken, false);
-      }
-    }catch(e){
-      if(!deviceToken){
-        deviceToken = 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-      }
-    }
+  // ---------- shared bookings — Firestore, one document per instrument ----------
+  function bookingRef(instrumentKey){
+    return doc(db, 'bookings', instrumentKey);
   }
 
-  async function loadBookings(){
-    try{
-      const res = await window.storage.get('bookings', true);
-      const parsed = res ? JSON.parse(res.value) : {};
-      bookings = { furnace: parsed.furnace || {}, gc: parsed.gc || {} };
-    }catch(e){
-      if(!bookings || !bookings.furnace || !bookings.gc){
-        bookings = { furnace: {}, gc: {} };
-      }
-    }
-  }
-  async function saveBookings(){
-    try{ await window.storage.set('bookings', JSON.stringify(bookings), true); }catch(e){
-      console.error('Could not save bookings', e);
-    }
+  function subscribeToBookings(){
+    onSnapshot(bookingRef('furnace'),
+      snap => { bookings.furnace = snap.exists() ? snap.data() : {}; connError = false; hasLoadedOnce = true; render(); },
+      err => { console.error('furnace snapshot error', err); connError = true; render(); }
+    );
+    onSnapshot(bookingRef('gc'),
+      snap => { bookings.gc = snap.exists() ? snap.data() : {}; connError = false; hasLoadedOnce = true; render(); },
+      err => { console.error('gc snapshot error', err); connError = true; render(); }
+    );
   }
 
   function countWeekBlocksFor(token, weekDates, excludeDate, table){
@@ -651,7 +674,7 @@
     return div.innerHTML;
   }
   function shortName(name){
-    const first = name.trim().split(/\s+/)[0];
+    const first = (name || '').trim().split(/\s+/)[0] || 'Someone';
     return first.length > 9 ? first.slice(0, 8) + '…' : first;
   }
 
@@ -724,7 +747,7 @@
           </div>
         `;
       } else {
-        statusHtml = `<p class="modal-status">Slot reserved by <strong>${escapeHtml(booking.name)}</strong>.<br><span style="font-size:12px; opacity:0.8;">🔒 Locked: Only the device used to book this slot can release it.</span></p>`;
+        statusHtml = `<p class="modal-status">Slot reserved by <strong>${escapeHtml(booking.name || 'a lab member')}</strong>.<br><span style="font-size:12px; opacity:0.8;">🔒 Locked: Only the device used to book this slot can release it.</span></p>`;
         actionsHtml = `
           <div class="panel-actions">
             <button class="btn ghost" data-action="deselect">Close</button>
@@ -757,6 +780,11 @@
   }
 
   function render(){
+    if(!hasLoadedOnce && !connError){
+      // still waiting on the very first Firestore read — keep the loading state
+      return;
+    }
+
     const today = todayDate();
     const bounds = windowBounds();
     const table = bookings[activeInstrument];
@@ -784,6 +812,10 @@
         </div>
       </div>
     `;
+
+    if(connError){
+      html += `<div class="conn-error">Couldn't reach the shared calendar. Check your connection, or confirm the Firebase config and Firestore rules are set up correctly.</div>`;
+    }
 
     if(!myName){
       html += `
@@ -860,22 +892,22 @@
   function attachHandlers(){
     const nameForm = document.getElementById('nameForm');
     if(nameForm){
-      nameForm.addEventListener('submit', async (e)=>{
+      nameForm.addEventListener('submit', (e)=>{
         e.preventDefault();
         const input = document.getElementById('nameInput');
         const val = input.value.trim();
         if(!val) return;
-        await saveName(val);
+        saveName(val);
         render();
       });
     }
 
     const whoBtn = document.getElementById('whoBtn');
     if(whoBtn){
-      whoBtn.addEventListener('click', async ()=>{
+      whoBtn.addEventListener('click', ()=>{
         const next = prompt('Update your name:', myName || '');
         if(next && next.trim()){
-          await saveName(next.trim());
+          saveName(next.trim());
           render();
         }
       });
@@ -912,66 +944,86 @@
     });
 
     document.querySelectorAll('[data-action="confirmBlock"]').forEach(el=>{
-      el.addEventListener('click', async ()=>{
+      el.addEventListener('click', ()=>{
         const date = el.getAttribute('data-date');
-        await handleBlock(date);
+        handleBlock(date);
       });
     });
 
     document.querySelectorAll('[data-action="confirmRelease"]').forEach(el=>{
-      el.addEventListener('click', async ()=>{
+      el.addEventListener('click', ()=>{
         const date = el.getAttribute('data-date');
-        await handleRelease(date);
+        handleRelease(date);
       });
     });
   }
 
+  // ---------- writes, as Firestore transactions so two people can never win the same slot ----------
   async function handleBlock(date){
-    await loadBookings();
-    const table = bookings[activeInstrument];
-
-    if(table[date]){
-      selectedDate = null;
-      render();
-      return;
-    }
-
+    const ref = bookingRef(activeInstrument);
     const d = new Date(date + 'T00:00:00');
     const weekDates = getWeekDatesFor(d);
-    const used = countWeekBlocksFor(deviceToken, weekDates, date, table);
-    if(used >= MAX_PER_WEEK){
-      alert(`Weekly limit reached (${MAX_PER_WEEK} days for ${INSTRUMENTS[activeInstrument].label}). Release an existing slot first.`);
-      selectedDate = null;
-      render();
-      return;
-    }
 
-    table[date] = { 
-      name: myName, 
-      ownerToken: deviceToken, 
-      blockedAt: Date.now() 
-    };
-    await saveBookings();
+    try{
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const data = snap.exists() ? snap.data() : {};
+
+        if(data[date]) throw new Error('ALREADY_BOOKED');
+
+        let count = 0;
+        for(const wd of weekDates){
+          const k = fmt(wd);
+          if(k === date) continue;
+          if(data[k] && data[k].ownerToken === deviceToken) count++;
+        }
+        if(count >= MAX_PER_WEEK) throw new Error('LIMIT_REACHED');
+
+        tx.set(ref, {
+          [date]: { name: myName, ownerToken: deviceToken, blockedAt: Date.now() }
+        }, { merge: true });
+      });
+    }catch(err){
+      if(err && err.message === 'ALREADY_BOOKED'){
+        // someone else's write landed first — the live listener will refresh the view
+      } else if(err && err.message === 'LIMIT_REACHED'){
+        alert(`Weekly limit reached (${MAX_PER_WEEK} days for ${INSTRUMENTS[activeInstrument].label}). Release an existing slot first.`);
+      } else {
+        console.error(err);
+        alert('Could not reserve this slot. Check your connection and try again.');
+      }
+    }
     selectedDate = null;
     render();
   }
 
   async function handleRelease(date){
-    await loadBookings();
-    const table = bookings[activeInstrument];
-    if(table[date] && table[date].ownerToken === deviceToken){
-      delete table[date];
-      await saveBookings();
-    } else {
-      alert("Only the device used to book this slot can release it.");
+    const ref = bookingRef(activeInstrument);
+    try{
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const data = snap.exists() ? snap.data() : {};
+        const booking = data[date];
+        if(!booking) return;
+        if(booking.ownerToken !== deviceToken) throw new Error('NOT_OWNER');
+        tx.update(ref, { [date]: deleteField() });
+      });
+    }catch(err){
+      if(err && err.message === 'NOT_OWNER'){
+        alert('Only the device used to book this slot can release it.');
+      } else {
+        console.error(err);
+        alert('Could not release this slot. Check your connection and try again.');
+      }
     }
     selectedDate = null;
     render();
   }
 
-  async function init(){
-    await Promise.all([loadName(), loadDeviceToken(), loadBookings()]);
-    render();
+  function init(){
+    loadName();
+    loadDeviceToken();
+    subscribeToBookings();
   }
 
   init();
